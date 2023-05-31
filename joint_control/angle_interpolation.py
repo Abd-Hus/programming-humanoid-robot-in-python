@@ -22,7 +22,8 @@
 
 from pid import PIDAgent
 from keyframes import hello
-
+timeref = -1
+bezier_data = [[],[],[]]
 
 class AngleInterpolationAgent(PIDAgent):
     def __init__(self, simspark_ip='localhost',
@@ -39,38 +40,46 @@ class AngleInterpolationAgent(PIDAgent):
         self.target_joints.update(target_joints)
         return super(AngleInterpolationAgent, self).think(perception)
 
+    
     def angle_interpolation(self, keyframes, perception):
         target_joints = {}
         # YOUR CODE HERE
         import numpy as np
         target_joints = perception.joint
-        bezier_data = [[],[],[]]
-        bezier_data[0] = keyframes[0]
-        t = np.linspace(0,1,101)
-        for joint in keyframes[0]:
-            index = keyframes[0].index(joint)
-            timesteps = len(keyframes[1][index]) - 1
-            
-            for i in range(timesteps):
+        global timeref
+        global bezier_data
+        if timeref == -1:
+            timeref = perception.time
+        dt = round(perception.time - timeref, 4)
+        if bezier_data == [[],[],[]]:
+            bezier_data[0] = keyframes[0]
+            t = np.linspace(0,1,101)
+            for joint in keyframes[0]:
+                index = keyframes[0].index(joint)
+                timesteps = len(keyframes[1][index]) - 1
                 angle_values = []
                 timeframe = []
-                dt = keyframes[1][index][i+1] - keyframes[1][index][i]
-                P0 = keyframes[2][index][i][0]
-                P3 = keyframes[2][index][i+1][0]
-                P1 = P0 + keyframes[2][index][i][2][2]
-                P2 = P3 + keyframes[2][index][i+1][1][2]
-                for j in t:
-                    if i != 0 and j == 0:
-                        continue
-                    timeframe.append(keyframes[1][index][i] + j*dt)
-                    angle = (1-j)**3 * P0 + 3 * (1-j)**2 * j * P1 + 3 * (1-j) * j**2 * P2 + j**3 * P3
-                    angle_values.append(angle)
-            bezier_data[1].append(timeframe)
-            bezier_data[2].append(angle_values)
-        
+                for i in range(timesteps):
+                    dt = keyframes[1][index][i+1] - keyframes[1][index][i]
+                    P0 = keyframes[2][index][i][0]
+                    P3 = keyframes[2][index][i+1][0]
+                    P1 = P0 + keyframes[2][index][i][2][2]
+                    P2 = P3 + keyframes[2][index][i+1][1][2]
+                    for j in t:
+                        if i != 0 and j == 0:
+                            continue
+                        timeframe.append(keyframes[1][index][i] + j*dt)
+                        angle = (1-j)**3 * P0 + 3 * (1-j)**2 * j * P1 + 3 * (1-j) * j**2 * P2 + j**3 * P3
+                        angle_values.append(angle)
+                bezier_data[1].append(timeframe)
+                bezier_data[2].append(angle_values)
+        for i in range(len(bezier_data[0])):
+            if dt in bezier_data[1][i]:
+                target_joints[bezier_data[0][i]] = bezier_data[2][i][bezier_data[1][i].index(dt)]
         return target_joints
 
 if __name__ == '__main__':
     agent = AngleInterpolationAgent()
     agent.keyframes = hello()  # CHANGE DIFFERENT KEYFRAMES
     agent.run()
+    
