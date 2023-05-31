@@ -22,6 +22,7 @@
 
 from pid import PIDAgent
 from keyframes import hello
+import numpy as np
 timeref = -1
 bezier_data = [[],[],[]]
 
@@ -45,13 +46,13 @@ class AngleInterpolationAgent(PIDAgent):
     def angle_interpolation(self, keyframes, perception):
         target_joints = {}
         # YOUR CODE HERE
-        import numpy as np
         target_joints = perception.joint
         global timeref
         global bezier_data
         if timeref == -1:
             timeref = perception.time
-        dt = round(perception.time - timeref, 4)
+        del_t = 1/100
+        timediff = round(perception.time - timeref, 4) + del_t
         if bezier_data == [[],[],[]]:
             bezier_data[0] = keyframes[0]
             t = np.linspace(0,1,101)
@@ -75,8 +76,9 @@ class AngleInterpolationAgent(PIDAgent):
                 bezier_data[1].append(timeframe)
                 bezier_data[2].append(angle_values)
         for i in range(len(bezier_data[0])):
-            if dt in bezier_data[1][i]:
-                target_joints[bezier_data[0][i]] = bezier_data[2][i][bezier_data[1][i].index(dt)]
+            if timediff in bezier_data[1][i]:
+                target_joints[bezier_data[0][i]] = bezier_data[2][i][bezier_data[1][i].index(timediff)]
+        perception.time = perception.time + del_t
         return target_joints
 
 if __name__ == '__main__':
