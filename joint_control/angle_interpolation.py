@@ -21,10 +21,9 @@
 
 
 from pid import PIDAgent
-from keyframes import hello
-import numpy as np
-timeref = -1
-bezier_data = [[],[],[]]
+from keyframes import rightBellyToStand
+
+time_ref = -1
 
 class AngleInterpolationAgent(PIDAgent):
     def __init__(self, simspark_ip='localhost',
@@ -46,7 +45,7 @@ class AngleInterpolationAgent(PIDAgent):
     def angle_interpolation(self, keyframes, perception):
         target_joints = {}
         # YOUR CODE HERE
-        
+        '''
         target_joints = perception.joint
         
         global timeref
@@ -79,10 +78,34 @@ class AngleInterpolationAgent(PIDAgent):
         for i in range(len(bezier_data[0])):
             if timediff in bezier_data[1][i]:
                 target_joints[bezier_data[0][i]] = bezier_data[2][i][bezier_data[1][i].index(timediff)]
+        '''
+
+        target_joints = perception.joint
+
+        global time_ref
+        if time_ref == -1:
+            time_ref = perception.time
+        t = round(perception.time - time_ref, 4)
+        for joint in keyframes[0]:
+            index_joint = keyframes[0].index(joint)
+            index_time = 0
+            n = len(keyframes[1][index_joint])
+            while (t > keyframes[1][index_joint][index_time] and index_time < n-1):
+                index_time += 1
+            if (index_time > 0 and index_time < n-1):
+                dt = keyframes[1][index_joint][index_time+1] - keyframes[1][index_joint][index_time]
+                norm_time = (t - keyframes[1][index_joint][index_time]) / dt
+                P0 = keyframes[2][index_joint][index_time][0]
+                P3 = keyframes[2][index_joint][index_time+1][0]
+                P1 = P0 + keyframes[2][index_joint][index_time][2][2]
+                P2 = P3 + keyframes[2][index_joint][index_time+1][1][2]
+                angle = (1-norm_time)**3 * P0 + 3 * (1-norm_time)**2 * norm_time * P1 + 3 * (1-norm_time) * norm_time**2 * P2 + norm_time**3 * P3
+                target_joints[joint] = angle
+
         return target_joints
 
 if __name__ == '__main__':
     agent = AngleInterpolationAgent()
-    agent.keyframes = hello()  # CHANGE DIFFERENT KEYFRAMES
+    agent.keyframes = rightBellyToStand()  # CHANGE DIFFERENT KEYFRAMES
     agent.run()
     
