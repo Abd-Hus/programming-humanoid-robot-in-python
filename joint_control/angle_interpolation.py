@@ -21,7 +21,7 @@
 
 
 from pid import PIDAgent
-from keyframes import rightBackToStand
+from keyframes import hello
 
 time_ref = -1
 
@@ -71,6 +71,6 @@ class AngleInterpolationAgent(PIDAgent):
 
 if __name__ == '__main__':
     agent = AngleInterpolationAgent()
-    agent.keyframes = rightBackToStand()  # CHANGE DIFFERENT KEYFRAMES
+    agent.keyframes = hello()  # CHANGE DIFFERENT KEYFRAMES
     agent.run()
     

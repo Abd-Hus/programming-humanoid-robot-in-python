@@ -54,7 +54,7 @@ class PIDController(object):
         '''
         # YOUR CODE HERE
         self.y.append(sensor)
-        e = target - self.y[0]
+        e = target - self.y[0] 
         
         self.u += (self.Kp + self.Ki*self.dt + self.Kd/self.dt) * e - (self.Kp + 2*self.Kd/self.dt) * self.e1 + self.Kd/self.dt * self.e2
         self.e2 = self.e1
